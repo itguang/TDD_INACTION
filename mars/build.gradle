@@ -11,6 +11,23 @@ repositories {
     mavenCentral()
 }
 
+test {
+    useJUnitPlatform()
+}
+
 dependencies {
+    // Junit 4
     testCompile group: 'junit', name: 'junit', version: '4.12'
+    // Junit 5
+    testCompile group: 'org.junit.platform', name: 'junit-platform-launcher', version: '1.2.0'
+    testCompile group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.2.0'
+    testCompile group: 'org.junit.vintage', name: 'junit-vintage-engine', version: '5.2.0'
+
+    // Lombok
+    annotationProcessor 'org.projectlombok:lombok:1.18.2'
+    compileOnly 'org.projectlombok:lombok:1.18.2'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.2'
+    testCompileOnly 'org.projectlombok:lombok:1.18.2'
+
+
 }
