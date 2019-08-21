@@ -1,13 +1,21 @@
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class TurnLeftTest5 {
 
     private TurnLeft turnLeft;
+
+    @BeforeAll
+    @DisplayName("只执行一次，执行时机是在所有测试和 @BeforeEach 注解方法之前")
+    static void initAll() {
+    }
+
+    @AfterAll
+    @DisplayName("只执行一次，执行时机是在所有测试和 @AfterEach 注解方法之后")
+    static void tearDownAll() {
+    }
+
 
     @BeforeEach
     @DisplayName("每条用例开始时执行")
@@ -49,6 +57,10 @@ class TurnLeftTest5 {
         assertEquals(Direction.EAST, turnLeft.execute(point).getDirection());
     }
 
-
+    @Test
+    @Disabled("这个测试跳过啦")
+    void skippedTest() {
+        // not executed
+    }
 
 }
