@@ -61,5 +61,283 @@
 * 3.分析模型: 行为,边界,职责
 * 4.各个击破: 对抽象出的每个模型进行测试开发
 
+#### Area: 探索区域的实现
+
+Area 本身有一个 判断一个point是否在探索区域内的方法. 详细实现请看源码.
+
+Area 的测试类: 
+
+```java
+   class AreaTest {   
+       @Test
+       @DisplayName("测试一个 point 是否在 Area 中")
+       void test_Area() {
+           Point A = new Point(10, 10, Direction.SOUTH);
+           Point B = new Point(-10, 10, Direction.SOUTH);
+           Point C = new Point(-10, -10, Direction.SOUTH);
+           Point D = new Point(10, -10, Direction.SOUTH);
+           Area area = new Area(A, B, C, D);
+   
+           assertTrue(area.contains(new Point(2, 2, Direction.SOUTH)));
+           assertTrue(area.contains(new Point(10, 10, Direction.SOUTH)));
+           assertFalse(area.contains(new Point(20, 2, Direction.SOUTH)));
+           assertFalse(area.contains(new Point(-11, -11, Direction.SOUTH)));
+           assertFalse(area.contains(new Point(-11, 1, Direction.SOUTH)));
+           assertFalse(area.contains(new Point(1, 11, Direction.SOUTH)));
+   
+       }
+}
+```
+
+#### Turn : 转向指令的实现
+
+Turn 指令分为 Turnleft 和 TurnRight
+
+测试类见 [TurnleftTest.java](https://github.com/itguang/TDD_INACTION/blob/master/mars/src/test/java/TurnLeftTest.java) 
+和 [TurnRightTest.java](https://github.com/itguang/TDD_INACTION/blob/master/mars/src/test/java/TurnRightTest.java)
+
+#### Move : 移动指令的实现
+
+  移动指令,需要在移动之后判断 是否超出探索区域
+
+Move 指令分为 MoveForward 和 MoveBack
+
+测试类见 [MoveForward.java](https://github.com/itguang/TDD_INACTION/blob/master/mars/src/test/java/MoveForward.java) 
+和 [MoveBack.java](https://github.com/itguang/TDD_INACTION/blob/master/mars/src/test/java/MoveBack.java)
+
+
+#### Rover: 火星流浪者的实现
+
+Rover 可以接受一系列指令: Instruction,并且有一个 deploy 方法 指定Rover的初始坐标
+
+```java
+public class Rover {
+
+    private Point point;
+
+    public void deploy(Point point) {
+        this.point = point;
+    }
+
+    public Point run(Instruction instruction) {
+        if (null == point) {
+            throw new RuntimeException("请初始化坐标");
+        }
+        return instruction.execute(point);
+    }
+
+    public Point getPoint() {
+        return point;
+    }
+
+    public Point run(LinkedList<Instruction> instructions) {
+        if (null == point) {
+            throw new RuntimeException("请初始化坐标");
+        }
+        instructions.forEach(instruction -> point = instruction.execute(point));
+        return getPoint();
+    }
+}
+```
+
+RoverTest.java
+
+```java
+class RoverTest {
+
+    private static Area area;
+
+    @BeforeAll
+    static void init() {
+        Point A = new Point(10, 10, Direction.SOUTH);
+        Point B = new Point(-10, 10, Direction.SOUTH);
+        Point C = new Point(-10, -10, Direction.SOUTH);
+        Point D = new Point(10, -10, Direction.SOUTH);
+        area = new Area(A, B, C, D);
+    }
+
+    @BeforeEach
+    void setUp() {
+    }
+
+    @AfterEach
+    void tearDown() {
+    }
+
+    @Test
+    @DisplayName("获取火星车位置")
+    void test_get_rover_point() {
+        Rover rover = new Rover();
+        Point point = new Point(0, 0, Direction.SOUTH);
+        rover.deploy(point);
+        assertEquals(rover.getPoint(), point);
+
+    }
+
+    @Test
+    @DisplayName("北 -> 左转")
+    void test_Rover_TurnLeft_S() {
+
+        // 左转指令
+        Instruction instruction = new TurnLeft();
+
+        Rover rover = new Rover();
+        rover.deploy(new Point(0, 0, Direction.SOUTH));
+        assertEquals(rover.run(instruction).getDirection(), Direction.WEST);
+    }
+
+    @Test
+    @DisplayName("北 -> 左转(抛出异常)")
+    void test_Rover_TurnLeft_S_not_init_point() {
+
+        // 左转指令
+        Instruction instruction = new TurnLeft();
+
+        Rover rover = new Rover();
+        assertThrows(RuntimeException.class, () -> {
+            rover.run(instruction).getDirection();
+        });
+    }
+
+    @Test
+    @DisplayName("北 -> 批量左转")
+    void test_batch_TurnLeft_S() {
+
+        // 有序指令集
+        LinkedList<Instruction> instructions = new LinkedList<>();
+        instructions.add(new TurnLeft());
+        instructions.add(new TurnLeft());
+
+        Rover rover = new Rover();
+        rover.deploy(new Point(0, 0, Direction.SOUTH));
+
+        assertEquals(rover.run(instructions).getDirection(), Direction.NORTH);
+    }
+
+    @Test
+    @DisplayName("北 -> 批量前进")
+    void test_batch_MoveForward_S() {
+        Rover rover = new Rover();
+        rover.deploy(new Point(0, 0, Direction.SOUTH));
+
+        // 有序指令集
+        LinkedList<Instruction> instructions = new LinkedList<>();
+        instructions.add(new MoveForward(area));
+        instructions.add(new MoveForward(area));
+
+        Point point = rover.run(instructions);
+        assertEquals(point.getDirection(), Direction.SOUTH);
+        assertEquals(point.getX(), 0);
+        assertEquals(point.getY(), 2);
+    }
+
+    @Test
+    @DisplayName("北 -> 批量(转向,前进)")
+    void test_batch_Move_and_Turn_S() {
+
+        Rover rover = new Rover();
+        // 初始坐标 (0,0,S)
+        rover.deploy(new Point(0, 0, Direction.SOUTH));
+
+        MoveForward moveForward = new MoveForward(area);
+        TurnRight turnRight = new TurnRight();
+
+        // 有序指令集
+        LinkedList<Instruction> instructions = new LinkedList<>();
+        // 北进2
+        instructions.add(moveForward);
+        instructions.add(moveForward);
+        // 北右转
+        instructions.add(turnRight);
+        // 东进2
+        instructions.add(moveForward);
+        instructions.add(moveForward);
+
+        // 最终坐标 (2,2,E)
+        Point point = rover.run(instructions);
+
+        assertEquals(point.getDirection(), Direction.EAST);
+        assertEquals(point.getX(), 2);
+        assertEquals(point.getY(), 2);
+    }
+
+    @Test
+    @DisplayName("东 -> 批量(转向,前进)")
+    void test_batch_Move_and_Turn_E() {
+
+        Rover rover = new Rover();
+        // 初始坐标 (0,0,S)
+        rover.deploy(new Point(0, 0, Direction.EAST));
+
+        TurnRight turnRight = new TurnRight();
+        MoveForward moveForward = new MoveForward(area);
+
+        // 有序指令集
+        LinkedList<Instruction> instructions = new LinkedList<>();
+        // 连续两次右转 -> (0,0,W)
+        instructions.add(turnRight);
+        instructions.add(turnRight);
+
+        // 进2 -> (-2,0,W)
+        instructions.add(moveForward);
+        instructions.add(moveForward);
+        // 右转 -> (-2,0,S)
+        instructions.add(turnRight);
+        // 进2 -> (-2,2,S)
+        instructions.add(moveForward);
+        instructions.add(moveForward);
+
+        // 最终坐标 (-2,2,S)
+        Point point = rover.run(instructions);
+
+        assertEquals(point.getDirection(), Direction.SOUTH);
+        assertEquals(point.getX(), -2);
+        assertEquals(point.getY(), 2);
+    }
+
+    @Test
+    @DisplayName("东 -> 批量(转向,前进) ,超出区域")
+    void test_batch_Move_and_Turn_more() {
+
+        Rover rover = new Rover();
+        // 初始坐标
+        rover.deploy(new Point(10, 10, Direction.EAST));
+
+        TurnRight turnRight = new TurnRight();
+        MoveForward moveForward = new MoveForward(area);
+
+        // 有序指令集
+        LinkedList<Instruction> instructions = new LinkedList<>();
+
+        // 进2
+        instructions.add(moveForward);
+        instructions.add(moveForward);
+        // 连续两次右转
+        instructions.add(turnRight);
+        instructions.add(turnRight);
+
+        // 进2
+        instructions.add(moveForward);
+        instructions.add(moveForward);
+        // 右转
+        instructions.add(turnRight);
+        // 进2
+        instructions.add(moveForward);
+        instructions.add(moveForward);
+
+        // 最终坐标
+        assertThrows(RuntimeException.class, () -> rover.run(instructions));
+
+    }
+
+}
+```
+
+执行测试,查看测试报告:
+
+![](imgs/mars4.png)
+
+
+
 
 
