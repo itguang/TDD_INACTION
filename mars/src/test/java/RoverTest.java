@@ -1,7 +1,4 @@
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.LinkedList;
 
@@ -9,6 +6,17 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class RoverTest {
+
+    private static Area area;
+
+    @BeforeAll
+    static void init() {
+        Point A = new Point(10, 10, Direction.SOUTH);
+        Point B = new Point(-10, 10, Direction.SOUTH);
+        Point C = new Point(-10, -10, Direction.SOUTH);
+        Point D = new Point(10, -10, Direction.SOUTH);
+        area = new Area(A, B, C, D);
+    }
 
     @BeforeEach
     void setUp() {
@@ -76,8 +84,8 @@ class RoverTest {
 
         // 有序指令集
         LinkedList<Instruction> instructions = new LinkedList<>();
-        instructions.add(new MoveForward());
-        instructions.add(new MoveForward());
+        instructions.add(new MoveForward(area));
+        instructions.add(new MoveForward(area));
 
         Point point = rover.run(instructions);
         assertEquals(point.getDirection(), Direction.SOUTH);
@@ -93,9 +101,8 @@ class RoverTest {
         // 初始坐标 (0,0,S)
         rover.deploy(new Point(0, 0, Direction.SOUTH));
 
-        MoveForward moveForward = new MoveForward();
+        MoveForward moveForward = new MoveForward(area);
         TurnRight turnRight = new TurnRight();
-
 
         // 有序指令集
         LinkedList<Instruction> instructions = new LinkedList<>();
@@ -125,7 +132,7 @@ class RoverTest {
         rover.deploy(new Point(0, 0, Direction.EAST));
 
         TurnRight turnRight = new TurnRight();
-        MoveForward moveForward = new MoveForward();
+        MoveForward moveForward = new MoveForward(area);
 
         // 有序指令集
         LinkedList<Instruction> instructions = new LinkedList<>();
@@ -148,6 +155,41 @@ class RoverTest {
         assertEquals(point.getDirection(), Direction.SOUTH);
         assertEquals(point.getX(), -2);
         assertEquals(point.getY(), 2);
+    }
+
+    @Test
+    @DisplayName("东 -> 批量(转向,前进) ,超出区域")
+    void test_batch_Move_and_Turn_more() {
+
+        Rover rover = new Rover();
+        // 初始坐标
+        rover.deploy(new Point(10, 10, Direction.EAST));
+
+        TurnRight turnRight = new TurnRight();
+        MoveForward moveForward = new MoveForward(area);
+
+        // 有序指令集
+        LinkedList<Instruction> instructions = new LinkedList<>();
+
+        // 进2
+        instructions.add(moveForward);
+        instructions.add(moveForward);
+        // 连续两次右转
+        instructions.add(turnRight);
+        instructions.add(turnRight);
+
+        // 进2
+        instructions.add(moveForward);
+        instructions.add(moveForward);
+        // 右转
+        instructions.add(turnRight);
+        // 进2
+        instructions.add(moveForward);
+        instructions.add(moveForward);
+
+        // 最终坐标
+        assertThrows(RuntimeException.class, () -> rover.run(instructions));
+
     }
 
 }
