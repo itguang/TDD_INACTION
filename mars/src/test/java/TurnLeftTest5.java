@@ -59,6 +59,7 @@ class TurnLeftTest5 {
 
     @Test
     @Disabled("这个测试跳过啦")
+    @DisplayName("这个测试跳过啦")
     void skippedTest() {
         // not executed
     }
