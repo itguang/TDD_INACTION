@@ -335,6 +335,8 @@ class RoverTest {
 
 执行测试,查看测试报告:
 
+![](imgs/mars5.png)
+
 ![](imgs/mars4.png)
 
 
