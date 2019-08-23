@@ -16,6 +16,7 @@ repositories {
 
 test {
     useJUnitPlatform()
+    // ./gradlew clean test --info 生成测试报告
 }
 
 dependencies {
